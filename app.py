@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Page configuration
 st.set_page_config(
     page_title="TPRM Company Research",
-    page_icon="🔍",
+    page_icon="TPRM",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -33,54 +33,32 @@ st.markdown("""
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #1f77b4;
+        color: #0b2c3d;
         text-align: center;
         padding: 1rem 0;
+        letter-spacing: 0.05em;
     }
     .sub-header {
-        font-size: 1.2rem;
-        color: #666;
+        font-size: 1.1rem;
+        color: #253238;
         text-align: center;
         margin-bottom: 2rem;
     }
-    .metric-card {
-        background-color: #f0f2f6;
+    .section-card {
+        background-color: #f9fafb;
         padding: 1rem;
         border-radius: 0.5rem;
-        margin: 0.5rem 0;
+        border: 1px solid #e0e7ef;
+        margin-bottom: 1rem;
     }
-    .risk-high {
-        background-color: #ffcccb;
-        padding: 0.5rem;
-        border-radius: 0.3rem;
-        border-left: 4px solid #ff0000;
+    .info-label {
+        font-weight: 600;
+        color: #0b2c3d;
+        margin-bottom: 0.1rem;
     }
-    .risk-medium {
-        background-color: #fff3cd;
-        padding: 0.5rem;
-        border-radius: 0.3rem;
-        border-left: 4px solid #ffc107;
-    }
-    .risk-low {
-        background-color: #d4edda;
-        padding: 0.5rem;
-        border-radius: 0.3rem;
-        border-left: 4px solid #28a745;
-    }
-    .cert-badge {
-        display: inline-block;
-        padding: 0.25rem 0.5rem;
-        margin: 0.2rem;
-        border-radius: 0.3rem;
-        font-size: 0.85rem;
-    }
-    .cert-yes {
-        background-color: #28a745;
-        color: white;
-    }
-    .cert-no {
-        background-color: #6c757d;
-        color: white;
+    .info-value {
+        color: #1f3a4d;
+        margin-bottom: 0.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -91,66 +69,66 @@ def display_basic_info(profile: dict):
     basic = profile.get("basic_info", {})
     contact = profile.get("contact", {})
     social = profile.get("social_media", {})
-    
-    st.subheader("📋 Basic Information")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("Company Name", basic.get("name", "N/A"))
-        st.metric("Industry", basic.get("industry", "N/A")[:50] if basic.get("industry") else "N/A")
-        
-    with col2:
-        sector = basic.get("sector", "N/A")
-        sector_color = "🟢" if sector == "IT" else "🔵"
-        st.metric("Sector", f"{sector_color} {sector}")
-        st.metric("Employees", basic.get("employee_count", "N/A"))
-        
-    with col3:
-        is_it = basic.get("is_it_company", False)
-        st.metric("IT Company", "✅ Yes" if is_it else "❌ No")
-        st.metric("IT Classification", basic.get("it_classification", "N/A"))
-    
-    # Services
-    services = basic.get("sub_services", [])
-    if services:
-        st.write("**Services/Products:**")
-        # Clean up services list
-        clean_services = [s for s in services if len(s) < 100 and s.strip()][:10]
-        if clean_services:
-            st.write(", ".join(clean_services))
-    
-    # Contact & Social Media
-    st.subheader("🌐 Contact & Online Presence")
-    
+
+    st.subheader("Basic Information")
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
-        if contact.get("official_website"):
-            st.markdown(f"🔗 **Website:** [{contact['official_website']}]({contact['official_website']})")
-        if contact.get("email"):
-            st.write(f"📧 **Email:** {contact['email']}")
-        if contact.get("phone"):
-            phone = contact['phone']
-            if len(phone) < 20:  # Only show valid phone numbers
-                st.write(f"📞 **Phone:** {phone}")
-        if contact.get("security_contact"):
-            st.write(f"🔐 **Security Contact:** {contact['security_contact']}")
-    
+        st.markdown("**Company Name**")
+        st.write(basic.get("name", "N/A"))
+        st.markdown("**Industry**")
+        st.write(basic.get("industry", "N/A")[:80] if basic.get("industry") else "N/A")
+        st.markdown("**Sub-Services / Offerings**")
+        services = basic.get("sub_services", [])[:12]
+        clean_services = [s.strip() for s in services if s and len(s) < 120]
+        st.write(", ".join(clean_services) if clean_services else "No structured services found")
+
     with col2:
-        if social.get("linkedin"):
-            st.markdown(f"💼 **LinkedIn:** [{social['linkedin']}]({social['linkedin']})")
-        if social.get("twitter"):
-            st.markdown(f"🐦 **Twitter:** [{social['twitter']}]({social['twitter']})")
-        if social.get("github"):
-            st.markdown(f"💻 **GitHub:** [{social['github']}]({social['github']})")
+        st.markdown("**Sector**")
+        st.write(basic.get("sector", "N/A"))
+        st.markdown("**Employees**")
+        st.write(basic.get("employee_count", "N/A"))
+        st.markdown("**IT Company**")
+        st.write("Yes" if basic.get("is_it_company") else "No")
+        st.markdown("**IT Classification**")
+        st.write(basic.get("it_classification", "N/A"))
+
+    st.subheader("Contact & Online Presence")
+
+    contact_table = []
+    if contact.get("official_website"):
+        contact_table.append(("Website", f"[{contact['official_website']}]({contact['official_website']})"))
+    if contact.get("email"):
+        contact_table.append(("Email", contact['email']))
+    if contact.get("phone") and len(contact['phone']) < 20:
+        contact_table.append(("Phone", contact['phone']))
+    if contact.get("security_contact"):
+        contact_table.append(("Security Contact", contact['security_contact']))
+
+    if contact_table:
+        st.table(pd.DataFrame(contact_table, columns=["Channel", "Details"]))
+    else:
+        st.write("No contact or website information detected")
+
+    social_table = []
+    if social.get("linkedin"):
+        social_table.append(("LinkedIn", social['linkedin']))
+    if social.get("twitter"):
+        social_table.append(("Twitter", social['twitter']))
+    if social.get("github"):
+        social_table.append(("GitHub", social['github']))
+
+    if social_table:
+        st.write("**Social Profiles**")
+        st.table(pd.DataFrame(social_table, columns=["Platform", "URL"]))
 
 
 def display_certifications(profile: dict):
     """Display security certifications and compliance"""
     security = profile.get("security_compliance", {})
     
-    st.subheader("🔒 Security & Compliance")
+    st.subheader("Security & Compliance")
     
     # ISO Certifications
     st.write("**ISO Certifications:**")
@@ -174,8 +152,7 @@ def display_certifications(profile: dict):
         cert_data.append({
             "Certification": name,
             "Description": desc,
-            "Status": status,
-            "✓": "✅" if status in ["Certified", "Mentioned"] else "❌"
+            "Status": status
         })
     
     df_certs = pd.DataFrame(cert_data)
@@ -187,21 +164,22 @@ def display_certifications(profile: dict):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        soc2 = "✅" if security.get("soc2_type2") or security.get("soc2_type1") else "❌"
-        soc_type = "Type II" if security.get("soc2_type2") else "Type I" if security.get("soc2_type1") else "N/A"
-        st.metric("SOC 2", f"{soc2} {soc_type}")
+        has_soc2 = security.get("soc2_type2") or security.get("soc2_type1")
+        soc_type = "Type II" if security.get("soc2_type2") else "Type I" if security.get("soc2_type1") else "Not available"
+        soc_status = "Compliant" if has_soc2 else "Not detected"
+        st.metric("SOC 2", f"{soc_type} ({soc_status})")
     
     with col2:
-        pci = "✅" if security.get("pci_dss") else "❌"
-        st.metric("PCI-DSS", pci)
+        pci_status = "Compliant" if security.get("pci_dss") else "Not detected"
+        st.metric("PCI-DSS", pci_status)
     
     with col3:
-        hipaa = "✅" if security.get("hipaa_compliant") else "❌"
-        st.metric("HIPAA", hipaa)
+        hipaa_status = "Compliant" if security.get("hipaa_compliant") else "Not detected"
+        st.metric("HIPAA", hipaa_status)
     
     with col4:
-        gdpr = "✅" if security.get("gdpr_compliant") else "❌"
-        st.metric("GDPR", gdpr)
+        gdpr_status = "Compliant" if security.get("gdpr_compliant") else "Not detected"
+        st.metric("GDPR", gdpr_status)
     
     # Additional certifications
     other_certs = security.get("other_certifications", [])
@@ -214,17 +192,17 @@ def display_certifications(profile: dict):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        has_sec = "✅" if security.get("has_security_page") else "❌"
+        has_sec = "Available" if security.get("has_security_page") else "Not detected"
         st.metric("Security Page", has_sec)
         if security.get("security_page_url"):
             st.markdown(f"[View Page]({security['security_page_url']})")
-    
+
     with col2:
-        has_trust = "✅" if security.get("has_trust_center") else "❌"
+        has_trust = "Available" if security.get("has_trust_center") else "Not detected"
         st.metric("Trust Center", has_trust)
-    
+
     with col3:
-        has_bounty = "✅" if security.get("has_bug_bounty") else "❌"
+        has_bounty = "Available" if security.get("has_bug_bounty") else "Not detected"
         st.metric("Bug Bounty", has_bounty)
 
 
@@ -232,7 +210,7 @@ def display_security_incidents(profile: dict):
     """Display security incidents and vulnerabilities"""
     incidents = profile.get("security_incidents", {})
     
-    st.subheader("⚠️ Security Incidents (Risk Assessment)")
+    st.subheader("Security Incidents & Risk")
     
     col1, col2 = st.columns(2)
     
@@ -240,19 +218,19 @@ def display_security_incidents(profile: dict):
         # Data Breaches
         st.write("**Data Breaches:**")
         breach_count = incidents.get("breach_count", 0)
-        
+
         if breach_count > 0:
-            st.error(f"🚨 {breach_count} breach(es) found!")
-            
+            st.warning(f"{breach_count} breach(es) recorded")
+
             if incidents.get("last_breach_date"):
                 st.write(f"Last breach: {incidents['last_breach_date']}")
-            
+
             if incidents.get("ransomware_history"):
-                st.error("⚠️ RANSOMWARE HISTORY DETECTED")
-            
+                st.error("Ransomware history detected")
+
             breaches = incidents.get("data_breaches", [])
             for i, breach in enumerate(breaches[:3], 1):
-                with st.expander(f"Breach #{i}"):
+                with st.expander(f"Breach {i}"):
                     if breach.get("date"):
                         st.write(f"**Date:** {breach['date']}")
                     if breach.get("severity"):
@@ -262,20 +240,20 @@ def display_security_incidents(profile: dict):
                     if breach.get("data_types_exposed"):
                         st.write(f"**Data Types:** {', '.join(breach['data_types_exposed'])}")
         else:
-            st.success("✅ No data breaches found")
+            st.info("No data breaches recorded")
     
     with col2:
         # CVE Vulnerabilities
         st.write("**CVE Vulnerabilities:**")
         cve_count = incidents.get("cve_count", 0)
         critical_count = incidents.get("critical_cve_count", 0)
-        
+
         if cve_count > 0:
             if critical_count > 0:
-                st.error(f"🚨 {cve_count} CVE(s) found ({critical_count} critical)")
+                st.warning(f"{cve_count} CVE(s) identified ({critical_count} marked critical)")
             else:
-                st.warning(f"⚠️ {cve_count} CVE(s) found")
-            
+                st.info(f"{cve_count} CVE(s) identified")
+
             cves = incidents.get("cve_vulnerabilities", [])
             if cves:
                 cve_data = []
@@ -284,17 +262,17 @@ def display_security_incidents(profile: dict):
                         "CVE ID": cve.get("cve_id", "Unknown"),
                         "Severity": cve.get("severity", "Unknown"),
                         "CVSS": cve.get("cvss_score", "N/A"),
-                        "Patched": "✅" if cve.get("patched") else "❓"
+                        "Patched": "Yes" if cve.get("patched") else "No"
                     })
                 df_cves = pd.DataFrame(cve_data)
                 st.dataframe(df_cves, width='stretch', hide_index=True)
         else:
-            st.success("✅ No CVE vulnerabilities found")
+            st.info("No CVE vulnerabilities recorded")
 
 
 def display_risk_summary(profile: dict):
     """Display overall risk summary"""
-    st.subheader("📊 TPRM Risk Summary")
+    st.subheader("TPRM Risk Summary")
     
     quality_score = profile.get("data_quality_score", 0)
     incidents = profile.get("security_incidents", {})
@@ -310,37 +288,37 @@ def display_risk_summary(profile: dict):
     with col2:
         # Risk Indicators
         risks = []
-        
+
         if incidents.get("breach_count", 0) > 0:
-            risks.append("🔴 Has data breach history")
+            risks.append("Has data breach history")
         if incidents.get("critical_cve_count", 0) > 0:
-            risks.append("🔴 Has critical CVE vulnerabilities")
+            risks.append("Has critical CVE vulnerabilities")
         if incidents.get("ransomware_history"):
-            risks.append("🔴 Has ransomware history")
+            risks.append("Has ransomware history")
         if not security.get("iso_27001", {}).get("status"):
-            risks.append("🟡 No ISO 27001 certification")
+            risks.append("Missing ISO 27001 certification")
         if not (security.get("soc2_type2") or security.get("soc2_type1")):
-            risks.append("🟡 No SOC 2 certification")
-        
+            risks.append("Missing SOC 2 certification")
+
         if risks:
-            st.write("**Risk Indicators:**")
+            st.write("Risk Indicators:")
             for risk in risks:
-                st.write(risk)
+                st.write(f"- {risk}")
         else:
-            st.success("✅ No major risks identified")
+            st.info("No major risks identified")
 
 
 def run_research(company_name: str) -> dict:
     """Run the research workflow"""
-    with st.spinner(f"🔍 Researching {company_name}..."):
+    with st.spinner(f"Researching {company_name}..."):
         result = run_graph(company_name)
         return result.get("company_profile", {})
 
 
 def main():
     # Header
-    st.markdown('<div class="main-header">🔍 TPRM Company Research Agent</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Free Third Party Risk Management - Search any company</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">TPRM Company Research Agent</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Free Third Party Risk Management research</div>', unsafe_allow_html=True)
     
     # Search bar
     col1, col2 = st.columns([4, 1])
@@ -353,7 +331,7 @@ def main():
         )
     
     with col2:
-        search_button = st.button("🔍 Search", type="primary", width='stretch')
+        search_button = st.button("Search", type="primary", width='stretch')
     
     # Store results in session state
     if "search_results" not in st.session_state:
@@ -375,10 +353,10 @@ def main():
         
         # Tabs for different sections
         tab1, tab2, tab3, tab4 = st.tabs([
-            "📋 Basic Info", 
-            "🔒 Certifications", 
-            "⚠️ Security Incidents",
-            "📊 Risk Summary"
+            "Basic Info",
+            "Certifications",
+            "Security Incidents",
+            "Risk Summary"
         ])
         
         with tab1:
@@ -396,7 +374,7 @@ def main():
         # Sources
         sources = profile.get("raw_sources", [])
         if sources:
-            with st.expander(f"📚 View {len(sources)} Sources"):
+            with st.expander(f"View {len(sources)} sources"):
                 for source in sources[:10]:
                     st.markdown(f"- [{source.get('title', 'Unknown')}]({source.get('url', '')})")
         
@@ -404,7 +382,7 @@ def main():
         st.divider()
         import json
         st.download_button(
-            label="📥 Download JSON Report",
+            label="Download JSON Report",
             data=json.dumps(profile, indent=2, default=str),
             file_name=f"{st.session_state.last_search.lower().replace(' ', '_')}_tprm_report.json",
             mime="application/json"
@@ -412,30 +390,30 @@ def main():
     
     else:
         # Show instructions when no search
-        st.info("👆 Enter a company name and click Search to research TPRM information")
+        st.info("Enter a company name and click Search to research TPRM information")
         
         st.markdown("""
         ### What this tool extracts:
         
         | Category | Information |
         |----------|-------------|
-        | 📋 **Basic Info** | Company name, industry, sector (IT/Non-IT), services |
-        | 🌐 **Contact** | Website, email, phone, social media |
-        | 🔒 **Certifications** | ISO 27001, ISO 9001, SOC 2, PCI-DSS, HIPAA, GDPR |
-        | ⚠️ **Security** | Data breaches, CVE vulnerabilities, ransomware history |
-        | 📊 **Risk Score** | Overall data quality and risk indicators |
+        | Basic Information | Company name, industry, sector (IT/Non-IT), services |
+        | Contact & Online Presence | Website, email, phone, social media |
+        | Certifications | ISO 27001, ISO 9001, SOC 2, PCI-DSS, HIPAA, GDPR |
+        | Security Incidents | Data breaches, CVE vulnerabilities, ransomware history |
+        | Risk Summary | Overall data quality and risk indicators |
         
         ---
         
-        **💡 Tips:**
+        Tips:
         - Use the official company name for best results
-        - The search uses multiple sources (LinkedIn, Wikipedia, security databases)
-        - Results are not saved to files - use the download button to export
+        - The research combines DuckDuckGo, verified sources and Groq LLM inference
+        - Results remain in the app; download JSON if you need an external copy
         """)
     
     # Footer
     st.divider()
-    st.caption("🆓 100% FREE - Uses DuckDuckGo search + Groq LLM (free tier)")
+    st.caption("100% FREE - Uses DuckDuckGo search + Groq LLM (free tier)")
 
 
 if __name__ == "__main__":
