@@ -87,6 +87,36 @@ python main.py
 
 Enter company name when prompted.
 
+## 🗂️ API Access
+
+The `api.py` module wraps the existing agent so you can POST company names and receive the TPRM JSON profile.
+
+1. Install the API dependencies (FastAPI / Uvicorn are already in `pyproject.toml`).
+2. Run the API server:
+   ```bash
+   uvicorn api:app --reload
+   ```
+3. Hit the research endpoint (use your preferred HTTP client):
+   ```bash
+   curl -X POST http://127.0.0.1:8000/research \
+     -H "Content-Type: application/json" \
+     -d '{"company": "Cloudflare"}'
+   ```
+4. The response contains the structured profile as JSON:
+   ```json
+   {
+     "company": "Cloudflare",
+     "completed_at": "2026-02-11T13:30:00Z",
+     "profile": {
+       "basic_info": {...},
+       "security_compliance": {...},
+       "security_incidents": {...}
+     }
+   }
+   ```
+
+Use this API to power other dashboards, automation, or integrations without rerunning the Streamlit UI.
+
 ## 📂 Project Structure
 
 ```
