@@ -1,0 +1,7 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+        "company_scraper": "./agent/graph.py:scraper_graph"
+    },
+    "env": ".env"
+}
