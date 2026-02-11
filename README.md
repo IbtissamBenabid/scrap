@@ -1,4 +1,4 @@
-# �️ TPRM Company Research Agent
+# Company Research Agent
 
 **AI-powered Third Party Risk Management research tool - 100% FREE!**
 
@@ -8,14 +8,14 @@
 
 An intelligent web scraping agent designed for **Third Party Risk Management (TPRM)** that automatically researches vendors and extracts security-relevant information:
 
-- 📋 **Basic Info** - Name, industry, sector (IT/Non-IT), sub-services
-- 📞 **Contact Details** - Headquarters, website, phone, email
-- 🌐 **Social Media** - LinkedIn, Twitter, Facebook profiles
-- 🏆 **ISO Certifications** - 27001, 9001, 22301, 14001
-- ✅ **Compliance** - SOC 2, PCI DSS, HIPAA, GDPR, FedRAMP
-- 🔓 **Data Breaches** - Historical security incidents
-- ⚠️ **CVE Vulnerabilities** - Known security vulnerabilities
-- 📊 **Risk Scoring** - Automated risk assessment (1-10)
+- **Basic Info** - Name, industry, sector (IT/Non-IT), sub-services
+- **Contact Details** - Headquarters, website, phone, email
+- **Social Media** - LinkedIn, Twitter, Facebook profiles
+- **ISO Certifications** - 27001, 9001, 22301, 14001
+- **Compliance** - SOC 2, PCI DSS, HIPAA, GDPR, FedRAMP
+- **Data Breaches** - Historical security incidents
+- **CVE Vulnerabilities** - Known security vulnerabilities
+- **Risk Scoring** - Automated risk assessment (1-10)
 
 ## ✨ Key Features
 
@@ -110,7 +110,7 @@ scrap/
         └── states.py         # TPRM data models
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -149,7 +149,7 @@ scrap/
 └─────────────────────────────────────────────────────┘
 ```
 
-## 📊 Data Extracted
+## Data Extracted
 
 ### Basic Information
 | Field | Description |
@@ -212,20 +212,20 @@ scrap/
 }
 ```
 
-## 🛡️ Responsible Use
+## Responsible Use
 
-- ⏱️ Adds delays between requests
-- 🔄 Rotates user agents
-- 📊 Limits request rates
-- 🔒 Uses only publicly available information
+- Adds delays between requests
+- Rotates user agents
+- Limits request rates
+- Uses only publicly available information
 
 Use responsibly for legitimate TPRM purposes.
 
-## 📜 License
+## License
 
 MIT License - Free for personal and commercial use.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [DuckDuckGo](https://duckduckgo.com) - Free, private search
 - [LangGraph](https://langchain-ai.github.io/langgraph/) - Agent orchestration
