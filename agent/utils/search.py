@@ -6,8 +6,13 @@ from typing import Optional
 
 try:
     from ddgs import DDGS
-except ImportError:
-    from duckduckgo_search import DDGS
+except Exception:
+    try:
+        from duckduckgo_search import DDGS
+    except Exception as e:
+        raise ImportError(
+            "DuckDuckGo search dependency not found. Install either 'ddgs' or 'duckduckgo-search' (e.g. pip install ddgs duckduckgo-search)"
+        ) from e
 
 from .constants import SEARCH_MAX_RESULTS, SEARCH_REGION, SEARCH_SAFESEARCH, SEARCH_TEMPLATES
 from .helpers import is_valid_url, should_skip_url, sort_urls_by_priority

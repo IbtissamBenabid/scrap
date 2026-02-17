@@ -2,11 +2,13 @@
 from datetime import datetime
 from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException, status
+import logging
+from fastapi import BackgroundTasks, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from agent.graph import run_graph
+from agent.utils import cache as cache_utils
 
 
 class ResearchRequest(BaseModel):
@@ -25,6 +27,27 @@ app = FastAPI(
     version="1.0.0",
 )
 
+logger = logging.getLogger(__name__)
+
+
+def _refresh_cached_profile(company_name: str) -> None:
+    try:
+        result = run_graph(company_name)
+    except Exception:
+        logger.exception("Background refresh failed for %s", company_name)
+        return
+
+    profile = result.get("company_profile")
+    if not profile:
+        logger.warning("Background refresh returned no profile for %s", company_name)
+        return
+
+    cache_utils.store_cache_entry(
+        company=company_name,
+        profile=profile,
+        completed_at=datetime.utcnow().isoformat() + "Z",
+    )
+
 
 @app.get("/health")
 def health_check():
@@ -32,26 +55,73 @@ def health_check():
 
 
 @app.post("/research", response_model=ResearchResponse)
-def research_company(request: ResearchRequest):
+def research_company(request: ResearchRequest, background_tasks: BackgroundTasks):
     """Research a company using the agent and return the profile as JSON."""
+    cached_entry = cache_utils.get_cache_entry(request.company)
+    if cached_entry:
+        # If entry is fresh return it immediately
+        if cache_utils.is_cache_entry_fresh(cached_entry):
+            return ResearchResponse(
+                company=cached_entry.get("company", request.company),
+                completed_at=cached_entry.get("completed_at", datetime.utcnow().isoformat() + "Z"),
+                profile=cached_entry.get("profile", {}),
+            )
+
+        # Stale entry: refresh in background and return existing data
+        background_tasks.add_task(_refresh_cached_profile, request.company)
+        return ResearchResponse(
+            company=cached_entry.get("company", request.company),
+            completed_at=cached_entry.get("completed_at", datetime.utcnow().isoformat() + "Z"),
+            profile=cached_entry.get("profile", {}),
+        )
+
+    # No cache entry: attempt to run the agent synchronously but be tolerant
     try:
         result = run_graph(request.company)
     except Exception as exc:  # pragma: no cover
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Research workflow failed: {exc}",
+        logger.exception("Synchronous research run failed for %s", request.company)
+        # Schedule a background refresh and return a 202 Accepted so callers
+        # don't receive a hard 500. This makes clients resilient to transient
+        # failures in the agent (LLM timeouts, network issues, etc.).
+        background_tasks.add_task(_refresh_cached_profile, request.company)
+        accepted_payload = {
+            "company": request.company,
+            "completed_at": datetime.utcnow().isoformat() + "Z",
+            "profile": {},
+            "detail": "Research accepted and will be retried in background.",
+        }
+        return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=accepted_payload)
+
+    profile = result.get("company_profile") if isinstance(result, dict) else None
+
+    # If agent did not produce a profile, store an empty result and respond
+    if not profile:
+        logger.warning("Agent returned no profile for %s", request.company)
+        completed_at = datetime.utcnow().isoformat() + "Z"
+        # Store an empty profile so repeated requests don't repeatedly trigger
+        # expensive synchronous runs. A background refresh can still be triggered
+        # by the client or via cache TTL expiration.
+        cache_utils.store_cache_entry(
+            company=request.company,
+            profile={},
+            completed_at=completed_at,
+        )
+        return ResearchResponse(
+            company=request.company,
+            completed_at=completed_at,
+            profile={},
         )
 
-    profile = result.get("company_profile")
-    if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="The agent did not return a company profile.",
-        )
+    completed_at = datetime.utcnow().isoformat() + "Z"
+    cache_utils.store_cache_entry(
+        company=request.company,
+        profile=profile,
+        completed_at=completed_at,
+    )
 
     return ResearchResponse(
         company=request.company,
-        completed_at=datetime.utcnow().isoformat() + "Z",
+        completed_at=completed_at,
         profile=profile,
     )
 
