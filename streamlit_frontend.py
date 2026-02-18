@@ -63,37 +63,39 @@ def display_profile(profile: dict, company: str):
     st.header(f"Results — {company}")
 
     # Top-line metrics
-    incidents = profile.get("security_indicidents", {}) if False else profile.get("security_incidents", {})
+    incidents = profile.get("security_incidents", {})
+    breaches_count = len(incidents.get("data_breaches", []))
+    cves_count = len(incidents.get("cve_vulnerabilities", []))
     col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
-        st.metric("Data quality", f"{profile.get('data_quality_score', 'N/A')}%")
+        st.metric("Company", profile.get('basic_info', {}).get('name', 'N/A'))
     with col2:
-        st.metric("Breaches", incidents.get("breach_count", 0))
+        st.metric("Breaches", breaches_count)
     with col3:
-        st.metric("CVEs", incidents.get("cve_count", 0))
+        st.metric("CVEs", cves_count)
 
     st.divider()
 
-    # Basic information
+    # Basic information - SIMPLIFIED
     st.subheader("Basic Information")
     basic = profile.get("basic_info", {})
     bcol1, bcol2 = st.columns(2)
     with bcol1:
-        st.markdown("**Company Name**")
-        st.write(basic.get("name", "N/A"))
-        st.markdown("**Industry**")
-        st.write(basic.get("industry", "N/A"))
-        st.markdown("**Sub-services / Offerings**")
-        services = basic.get("sub_services", [])
-        clean_services = [s.strip() for s in services if s]
-        st.write(", ".join(clean_services[:12]) if clean_services else "No structured services found")
-    with bcol2:
         st.markdown("**Sector**")
         st.write(basic.get("sector", "N/A"))
+        st.markdown("**Country**")
+        st.write(basic.get("country", "N/A"))
+        st.markdown("**Service Type**")
+        st.write("IT" if basic.get("is_it_company") else "Non-IT")
+    with bcol2:
         st.markdown("**Employees**")
         st.write(basic.get("employee_count", "N/A"))
-        st.markdown("**IT Company**")
-        st.write("Yes" if basic.get("is_it_company") else "No")
+        st.markdown("**Website**")
+        website = profile.get("contact", {}).get("official_website", "N/A")
+        st.write(website[:60] + "..." if isinstance(website, str) and len(website) > 60 else website)
+        st.markdown("**LinkedIn**")
+        linkedin = profile.get("social_media", {}).get("linkedin", "N/A")
+        st.write(linkedin[:60] + "..." if isinstance(linkedin, str) and len(linkedin) > 60 else linkedin)
 
     # Contact
     contact = profile.get("contact", {})
@@ -113,81 +115,80 @@ def display_profile(profile: dict, company: str):
     else:
         st.write("No contact or website information detected")
 
-    # Certifications / compliance
-    st.subheader("Security & Compliance")
+    # Certifications / compliance - SIMPLIFIED (booleans only)
+    st.subheader("Security Certifications")
     security = profile.get("security_compliance", {})
     iso_certs = [
-        ("ISO 27001", security.get("iso_27001", {}).get("status", "Not Found")),
-        ("ISO 27017", security.get("iso_27017", {}).get("status", "Not Found")),
-        ("ISO 9001", security.get("iso_9001", {}).get("status", "Not Found")),
+        ("ISO 27001 (Info Security)", "✅" if security.get("iso_27001") else "❌"),
+        ("ISO 27017 (Cloud Security)", "✅" if security.get("iso_27017") else "❌"),
+        ("ISO 27018 (Cloud Privacy)", "✅" if security.get("iso_27018") else "❌"),
+        ("ISO 9001 (Quality)", "✅" if security.get("iso_9001") else "❌"),
     ]
-    st.table(pd.DataFrame(iso_certs, columns=["Certification", "Status"]))
+    st.table(pd.DataFrame(iso_certs, columns=["ISO Certification", "Status"]))
 
+    st.subheader("Compliance Standards")
     comp_cols = st.columns(4)
     with comp_cols[0]:
-        has_soc2 = security.get("soc2_type2") or security.get("soc2_type1")
-        soc_type = "Type II" if security.get("soc2_type2") else "Type I" if security.get("soc2_type1") else "N/A"
-        st.metric("SOC 2", soc_type if has_soc2 else "Not detected")
+        st.metric("SOC 2", "✅" if security.get("soc2") else "❌")
     with comp_cols[1]:
-        st.metric("PCI-DSS", "Compliant" if security.get("pci_dss") else "Not detected")
+        st.metric("PCI-DSS", "✅" if security.get("pci_dss") else "❌")
     with comp_cols[2]:
-        st.metric("HIPAA", "Compliant" if security.get("hipaa_compliant") else "Not detected")
+        st.metric("HIPAA", "✅" if security.get("hipaa") else "❌")
     with comp_cols[3]:
-        st.metric("GDPR", "Compliant" if security.get("gdpr_compliant") else "Not detected")
+        st.metric("GDPR", "✅" if security.get("gdpr_compliant") else "❌")
+    
+    other_certs = security.get("other_certifications", [])
+    if other_certs:
+        st.info(f"**Other Certifications:** {', '.join(other_certs)}")
 
     # Security incidents
-    st.subheader("Security Incidents & Vulnerabilities")
-    if incidents.get("breach_count", 0) > 0:
-        st.warning(f"{incidents.get('breach_count')} breach(es) recorded")
-        if incidents.get("last_breach_date"):
-            st.write(f"Last breach: {incidents.get('last_breach_date')}")
-        breaches = incidents.get("data_breaches", [])
-        for i, breach in enumerate(breaches[:5], 1):
-            with st.expander(f"Breach {i}"):
-                for k, v in breach.items():
-                    st.write(f"**{k}**: {v}")
+    st.subheader("🚨 Security Incidents & Vulnerabilities")
+    
+    # Data breaches
+    breaches = incidents.get("data_breaches", [])
+    if breaches:
+        st.warning(f"⚠️ {len(breaches)} Data Breach(es) Found")
+        for i, breach in enumerate(breaches, 1):
+            with st.expander(f"Breach #{i}: {breach.get('affected_entity', 'Unknown')}"):
+                st.write(f"**Affected Entity:** {breach.get('affected_entity', 'Unknown')}")
+                st.write(f"**Date:** {breach.get('date', 'Unknown date')}")
+                st.write(f"**Description:** {breach.get('description', 'No details available')}")
     else:
-        st.info("No data breaches recorded")
+        st.info("✅ No data breaches recorded")
 
+    # CVEs
     cves = incidents.get("cve_vulnerabilities", [])
     if cves:
+        st.warning(f"⚠️ {len(cves)} CVE(s) Found")
         cve_rows = []
         for cve in cves[:20]:
             cve_rows.append({
                 "CVE ID": cve.get("cve_id", "-"),
-                "Severity": cve.get("severity", "-"),
-                "CVSS": cve.get("cvss_score", "-"),
-                "Patched": "Yes" if cve.get("patched") else "No",
+                "Affected Product": cve.get("affected_product", "-"),
+                "Description": cve.get("description", "-")[:50] + "..." if len(cve.get("description", "")) > 50 else cve.get("description", "-"),
             })
-        st.dataframe(pd.DataFrame(cve_rows))
+        st.dataframe(pd.DataFrame(cve_rows), use_container_width=True)
     else:
-        st.write("No CVE vulnerabilities recorded")
+        st.info("✅ No CVE vulnerabilities recorded")
 
-    # Risk summary
-    st.subheader("TPRM Risk Summary")
-    quality_score = profile.get("data_quality_score", 0) or 0
-    rcol1, rcol2 = st.columns(2)
+    # Risk summary (simplified - no scoring)
+    st.subheader("Summary")
+    rcol1, rcol2, rcol3 = st.columns(3)
     with rcol1:
-        st.metric("Data Quality Score", f"{quality_score}%")
-        st.progress(min(max(int(quality_score), 0), 100) / 100)
+        breach_count = len(incidents.get("data_breaches", []))
+        st.metric("Data Breaches", breach_count)
     with rcol2:
-        risks = []
-        if incidents.get("breach_count", 0) > 0:
-            risks.append("Has data breach history")
-        if incidents.get("critical_cve_count", 0) > 0:
-            risks.append("Has critical CVE vulnerabilities")
-        if incidents.get("ransomware_history"):
-            risks.append("Has ransomware history")
-        if not security.get("iso_27001", {}).get("status"):
-            risks.append("Missing ISO 27001 certification")
-        if not (security.get("soc2_type2") or security.get("soc2_type1")):
-            risks.append("Missing SOC 2 certification")
-
-        if risks:
-            for r in risks:
-                st.write(f"- {r}")
-        else:
-            st.write("No major risks identified")
+        cve_count = len(incidents.get("cve_vulnerabilities", []))
+        st.metric("CVEs Found", cve_count)
+    with rcol3:
+        # Count certificates
+        security = profile.get("security_compliance", {})
+        cert_count = sum([
+            1 for key in ["iso_27001", "iso_27017", "iso_27018", "iso_9001", 
+                          "soc2", "soc1", "pci_dss", "hipaa", "gdpr_compliant", "fedramp"]
+            if security.get(key)
+        ])
+        st.metric("Certifications", cert_count)
 
     # Sources
     st.subheader("Top Sources")

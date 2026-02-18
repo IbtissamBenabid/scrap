@@ -51,35 +51,30 @@ COMPANY_INFO_CATEGORIES = [
     "cve_vulnerabilities",  # Known CVEs
 ]
 
-# Search query templates for TPRM company research
+# Search query templates - SIMPLIFIED for speed and accuracy
 SEARCH_TEMPLATES = {
-    # Basic Information
-    "general": "{company} company information about",
+    # Essential: Basic Information
+    "general": "{company} company information",
     "official_site": "{company} official website",
+    
+    # Essential: LinkedIn
     "linkedin": "{company} LinkedIn company page",
     
-    # Industry & Services (for both IT and Non-IT)
-    "industry": "{company} industry sector services",
-    "services": "{company} products services offerings what they do",
-    "it_services": "{company} IT services technology software",
+    # Essential: Industry & Country
+    "industry_location": "{company} industry sector country location",
     
-    # TPRM Critical: Certifications
-    "iso_27001": "{company} ISO 27001 certified information security",
-    "iso_9001": "{company} ISO 9001 certified quality management",
-    "soc2": "{company} SOC 2 Type II compliance audit",
-    "certifications": "{company} security certifications compliance standards",
+    # Essential: Company Size & Services
+    "company_size": "{company} employees staff size how many",
+    "services": "{company} services IT technology what they do",
     
-    # TPRM Critical: Security
-    "security_page": "{company} security trust center",
-    "gdpr": "{company} GDPR compliant data protection",
+    # Essential: Security Certifications
+    "iso_27001": "{company} ISO 27001 security certified",
+    "soc2": "{company} SOC 2 compliance certified",
+    "certifications": "{company} security certifications compliance",
     
-    # TPRM Critical: Data Breaches
-    "data_breach": "{company} data breach security incident",
-    "breach_news": "{company} data leak hack breach 2024 2025 2026",
-    
-    # TPRM Critical: CVE Vulnerabilities
-    "cve": "{company} CVE vulnerability security advisory",
-    "security_advisory": "{company} security vulnerability disclosure",
+    # Essential: Data Breaches & CVEs
+    "breaches": "{company} data breach security incident hack",
+    "cve": "{company} CVE vulnerability security",
 }
 
 # IT Industry keywords for classification

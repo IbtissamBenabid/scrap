@@ -96,13 +96,18 @@ def extract_company_info_with_llm(content: str, company_name: str) -> dict:
 
 def extract_tprm_info_with_llm(content: str, company_name: str) -> dict:
     """
-    Use LLM to extract TPRM-focused company information from text
+    Use LLM to extract ESSENTIAL company information from text
     
-    Focuses on:
-    - Basic info, industry, IT classification
-    - Contact info, social media
-    - ISO certifications and compliance
-    - Data breaches and CVE vulnerabilities
+    Focuses on ONLY:
+    1. Website
+    2. LinkedIn
+    3. Industry/Sector
+    4. Country
+    5. Company Size
+    6. IT or Non-IT service type
+    7. Security certifications
+    8. Data breaches
+    9. CVEs
     """
     llm = get_llm()
     
@@ -110,72 +115,45 @@ def extract_tprm_info_with_llm(content: str, company_name: str) -> dict:
         logger.info("LLM not configured - skipping AI extraction")
         return {}
     
-    system_prompt = """You are an expert TPRM (Third Party Risk Management) analyst.
-Extract company information focused on security and compliance assessment.
+    system_prompt = """You are a company information extraction expert.
+Extract ONLY the following information about the company from the text:
 
-IMPORTANT: 
-- Only extract information that is explicitly stated in the text
-- Use empty strings, false, or empty lists for missing information
-- Be accurate and factual - this is for risk assessment
-- Focus on security-relevant information
+1. Website URL (official website)
+2. LinkedIn company page URL
+3. Industry/Sector (e.g., "Software Development", "Manufacturing", "Retail")
+4. Country/Location
+5. Company size (employee count or estimate)
+6. Service type: Is it IT/Technology company? (true/false)
+7. Security certifications present (ISO 27001, SOC 2, etc.)
+8. Data breaches (if any)
+9. CVE vulnerabilities (if any)
 
-Return a JSON object with these fields:
-{
-    "basic_info": {
-        "name": "",
-        "description": "",
-        "industry": "",
-        "sector": "",
-        "is_it_company": false,
-        "it_classification": "",
-        "sub_services": [],
-        "headquarters": "",
-        "country": "",
-        "employee_count": ""
-    },
-    "contact": {
-        "official_website": "",
-        "email": "",
-        "phone": "",
-        "security_contact": ""
-    },
-    "social_media": {
-        "linkedin": "",
-        "twitter": "",
-        "github": ""
-    },
-    "certifications": {
-        "iso_27001": false,
-        "iso_27017": false,
-        "iso_27018": false,
-        "iso_9001": false,
-        "iso_14001": false,
-        "iso_22301": false,
-        "soc2": false,
-        "soc2_type": "",
-        "pci_dss": false,
-        "hipaa": false,
-        "gdpr_compliant": false,
-        "other_certifications": []
-    },
-    "security_incidents": {
-        "has_breaches": false,
-        "breach_summary": "",
-        "breach_count": 0,
-        "has_cve_vulnerabilities": false,
-        "cve_summary": "",
-        "ransomware_history": false
-    }
-}
+RULES:
+- Only extract information EXPLICITLY mentioned in the text
+- Return JSON format only
+- Empty strings for missing data
+- Be accurate and factual
+- DO NOT calculate scores or risk levels
+- DO NOT make assumptions
 
-For is_it_company: Set true if the company is in technology/IT/software/digital services.
-For it_classification: Use categories like "Cloud Services", "Software Development", "Cybersecurity", "Data Analytics", "Managed Services", "Consulting", "Networking", "AI/ML", or "Non-IT"."""
+Return valid JSON only, no other text."""
 
-    user_prompt = f"""Extract TPRM-relevant information about "{company_name}" from the following text:
+    user_prompt = f"""Extract company information from this text about "{company_name}":
 
-{content[:15000]}
+{content[:12000]}
 
-Return ONLY valid JSON, no other text."""
+Return JSON with these exact fields:
+{{
+    "website": "",
+    "linkedin": "",
+    "sector": "",
+    "country": "",
+    "employee_count": "",
+    "is_it_company": false,
+    "certifications": [],
+    "data_breaches": [],
+    "cves": []
+}}"""
 
     try:
         messages = [

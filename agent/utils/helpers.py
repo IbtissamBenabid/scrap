@@ -245,6 +245,7 @@ def convert_to_markdown(data: dict, company_name: str) -> str:
         md += "## 🔒 Security & Compliance (TPRM)\n\n"
         md += "### ISO Certifications\n\n"
         
+        # ISO certs are now simple booleans
         iso_certs = [
             ("iso_27001", "ISO 27001 (Information Security)"),
             ("iso_27017", "ISO 27017 (Cloud Security)"),
@@ -257,27 +258,23 @@ def convert_to_markdown(data: dict, company_name: str) -> str:
         md += "| Certification | Status |\n"
         md += "|---------------|--------|\n"
         for key, name in iso_certs:
-            cert = security.get(key, {})
-            if isinstance(cert, dict):
-                status = cert.get("status", "Not Found")
-            else:
-                status = "Not Found"
-            emoji = "✅" if status in ["Certified", "Mentioned"] else "❌"
+            is_certified = security.get(key, False)
+            emoji = "✅" if is_certified else "❌"
+            status = "Certified" if is_certified else "Not Found"
             md += f"| {name} | {emoji} {status} |\n"
         md += "\n"
         
         md += "### Other Certifications & Compliance\n\n"
         md += "| Standard | Status |\n"
         md += "|----------|--------|\n"
-        if security.get("soc2_type2"):
-            md += "| SOC 2 Type II | ✅ Certified |\n"
-        elif security.get("soc2_type1"):
-            md += "| SOC 2 Type I | ✅ Certified |\n"
+        if security.get("soc2"):
+            md += "| SOC 2 | ✅ Certified |\n"
         else:
             md += "| SOC 2 | ❌ Not Found |\n"
         
+        md += f"| SOC 1 | {'✅ Certified' if security.get('soc1') else '❌ Not Found'} |\n"
         md += f"| PCI-DSS | {'✅ Compliant' if security.get('pci_dss') else '❌ Not Found'} |\n"
-        md += f"| HIPAA | {'✅ Compliant' if security.get('hipaa_compliant') else '❌ Not Found'} |\n"
+        md += f"| HIPAA | {'✅ Compliant' if security.get('hipaa') else '❌ Not Found'} |\n"
         md += f"| GDPR | {'✅ Compliant' if security.get('gdpr_compliant') else '❌ Not Found'} |\n"
         md += f"| FedRAMP | {'✅ Authorized' if security.get('fedramp') else '❌ Not Found'} |\n"
         md += "\n"
@@ -285,11 +282,6 @@ def convert_to_markdown(data: dict, company_name: str) -> str:
         other_certs = security.get("other_certifications", [])
         if other_certs:
             md += "**Other Certifications:** " + ", ".join(other_certs) + "\n\n"
-        
-        md += "### Security Practices\n\n"
-        md += f"- **Security Page:** {'✅ ' + security.get('security_page_url', 'Yes') if security.get('has_security_page') else '❌ Not Found'}\n"
-        md += f"- **Trust Center:** {'✅ ' + security.get('trust_center_url', 'Yes') if security.get('has_trust_center') else '❌ Not Found'}\n"
-        md += f"- **Bug Bounty Program:** {'✅ Yes' if security.get('has_bug_bounty') else '❌ Not Found'}\n"
         md += "\n"
     
     # Security Incidents Section - CRITICAL FOR TPRM RISK
@@ -308,46 +300,33 @@ def convert_to_markdown(data: dict, company_name: str) -> str:
             breaches = incidents.get("data_breaches", [])
             for i, breach in enumerate(breaches[:5], 1):
                 md += f"#### Breach #{i}\n"
+                if breach.get("affected_entity"):
+                    md += f"- **Affected Entity:** {breach['affected_entity']}\n"
                 if breach.get("date"):
                     md += f"- **Date:** {breach['date']}\n"
-                if breach.get("severity"):
-                    md += f"- **Severity:** {breach['severity']}\n"
-                if breach.get("records_affected"):
-                    md += f"- **Records Affected:** {breach['records_affected']}\n"
-                if breach.get("data_types_exposed"):
-                    md += f"- **Data Types:** {', '.join(breach['data_types_exposed'])}\n"
-                if breach.get("source_url"):
-                    md += f"- **Source:** {breach['source_url']}\n"
+                if breach.get("description"):
+                    md += f"- **Description:** {breach['description'][:200]}...\n"
                 md += "\n"
         else:
             md += "✅ **No data breaches found**\n\n"
         
         # CVE Vulnerabilities
         md += "### CVE Vulnerabilities\n\n"
-        cve_count = incidents.get("cve_count", 0)
-        critical_count = incidents.get("critical_cve_count", 0)
+        cve_count = len(incidents.get("cve_vulnerabilities", []))
         if cve_count > 0:
-            md += f"**⚠️ {cve_count} CVE(s) found ({critical_count} critical)**\n\n"
+            md += f"**⚠️ {cve_count} CVE(s) found**\n\n"
             
             cves = incidents.get("cve_vulnerabilities", [])
             if cves:
-                md += "| CVE ID | Severity | CVSS | Patched |\n"
-                md += "|--------|----------|------|--------|\n"
+                md += "| CVE ID | Affected Product |\n"
+                md += "|--------|------------------|\n"
                 for cve in cves[:10]:
                     cve_id = cve.get("cve_id", "Unknown")
-                    severity = cve.get("severity", "Unknown")
-                    cvss = cve.get("cvss_score", "N/A")
-                    patched = "✅ Yes" if cve.get("patched") else "❓ Unknown"
-                    md += f"| {cve_id} | {severity} | {cvss} | {patched} |\n"
+                    product = cve.get("affected_product", "Unknown")
+                    md += f"| {cve_id} | {product} |\n"
                 md += "\n"
         else:
             md += "✅ **No CVE vulnerabilities found**\n\n"
-        
-        # Ransomware
-        if incidents.get("ransomware_history"):
-            md += "### ⚠️ Ransomware History\n\n"
-            md += "**WARNING:** This company has a history of ransomware attacks.\n\n"
-    
     # Risk Summary
     md += "## 📊 TPRM Risk Summary\n\n"
     quality_score = data.get("data_quality_score", 0)
@@ -361,7 +340,7 @@ def convert_to_markdown(data: dict, company_name: str) -> str:
             md += f"- ⚠️ {indicator}\n"
         md += "\n"
     
-    # Auto-generated risk assessment
+    # Auto-generated risk assessment - fixed for simplified model
     risks = []
     if incidents.get("breach_count", 0) > 0:
         risks.append("Has data breach history")
@@ -369,7 +348,7 @@ def convert_to_markdown(data: dict, company_name: str) -> str:
         risks.append("Has critical CVE vulnerabilities")
     if incidents.get("ransomware_history"):
         risks.append("Has ransomware history")
-    if not security.get("iso_27001", {}).get("status"):
+    if not security.get("iso_27001", False):
         risks.append("No ISO 27001 certification found")
     
     if risks:
